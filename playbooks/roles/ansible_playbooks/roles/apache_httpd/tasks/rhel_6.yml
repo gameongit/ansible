@@ -1,0 +1,14 @@
+  - name: Install yum repository for the RedHat Sowtware collection
+    yum_repository:
+      name: scl-el-6
+      description: Software Collections for Enterprise Linux 6 - x86_64
+#      baseurl: http://yum.os.amadeus.net/mirror/latest/rhel-server-rhscl-6-rpms/
+      baseurl: http://vault.centos.org/7.4.1708/sclo/x86_64/rh/   
+      file: scl
+      enabled: yes
+      gpgcheck: no
+
+  - name : Install httpd24-httpd package
+    yum:
+      name: httpd24-httpd
+      state: latest

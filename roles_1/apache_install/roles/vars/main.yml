@@ -1,0 +1,8 @@
+- apache:
+  self-build: false
+  bin_path: /opt/rh/httpd24/root/usr/sbin/httpd
+
+- application:
+  conf_file: /NPSAPPL/etc/init.d/rcapache2
+  old_bin: /NPSAPPL/bin/apache2/bin/httpd
+  new_bin: {{ bin_path }}

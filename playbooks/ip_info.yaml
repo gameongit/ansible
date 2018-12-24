@@ -1,0 +1,13 @@
+---
+
+- name: Get local ip infromation from all hosts in list
+  hosts: all
+
+  tasks:
+    - name: run ifconfig
+      shell: /sbin/ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'
+      args:
+        executable: /bin/bash
+      register: out
+
+    - debug: var=out.stdout_lines

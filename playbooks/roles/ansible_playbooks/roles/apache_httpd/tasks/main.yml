@@ -1,0 +1,14 @@
+#- fail:
+#  when: ansible_distribution != "RedHat" or
+#      (ansible_distribution == "RedHat" and
+#        (ansible_distribution_major_version|int < 6 or ansible_distribution_major_version|int > 7))
+
+- import_tasks: rhel_6.yml
+#  when: ansible_distribution == "RedHat" and ansible_distribution_major_version|int == 6
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+- import_tasks: rhel_7.yml
+  when: ansible_distribution == "RedHat" and ansible_distribution_major_version|int == 7
+
+- import_tasks: conf_switch.yml
+  when: apache.self_build == "true"

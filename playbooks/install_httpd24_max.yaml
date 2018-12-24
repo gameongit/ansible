@@ -1,0 +1,21 @@
+---
+
+- name: Install httpd from RedHat software collection for RedHat 6.X
+  hosts: all
+  become: yes
+
+  tasks:
+
+  - name: Install yum repository for the RedHat Sowtware collection
+    yum_repository:
+      name: scl-el-6
+      description: Software Collections for Enterprise Linux 6 - x86_64
+      baseurl: http://yum.os.amadeus.net/mirror/latest/rhel-server-rhscl-6-rpms/
+      file: scl
+      enabled: yes
+      gpgcheck: no
+
+  - name : Install httpd24-httpd package
+    yum:
+      name: httpd24-httpd
+      state: latest

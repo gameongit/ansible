@@ -1,0 +1,18 @@
+---
+
+- name: Full cleanup Softare Collection repo and httpd24-httpd
+  hosts: all
+  become: yes
+
+  tasks:
+
+  - name : Remove httpd24-httpd package
+    yum:
+      name: "httpd24-*"
+      state: absent
+
+  - name: Remove yum repository for the RedHat Sowtware collection
+    yum_repository:
+      name: scl-el-6
+      file: scl_repo
+      state: absent

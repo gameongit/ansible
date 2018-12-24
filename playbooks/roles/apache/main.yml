@@ -1,0 +1,13 @@
+---
+
+- name: Install httpd24
+  hosts: all
+  roles:
+     - apache_install
+
+  tasks:
+
+  - name: Installation of apache on redhat
+    import_tasks: install_httpd_redhat.yml
+    when: 
+

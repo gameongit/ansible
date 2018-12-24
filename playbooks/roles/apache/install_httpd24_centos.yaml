@@ -1,0 +1,28 @@
+---
+
+- name: Install httpd24
+  hosts: all
+  become: yes
+
+  tasks:
+
+  - name: Check if the package is still showing
+    shell: yum list available | grep -i httpd24-httpd
+    register: package_check
+    failed_when: no
+    changed_when: no
+
+  - name: Install yum repository for the RedHat Sowtware collection
+    yum_repository:
+      name: scl-el-6
+      description: Software Collections for Enterprise Linux
+      baseurl: http://vault.centos.org/7.4.1708/sclo/x86_64/rh/
+      file: scl_repo
+      enabled: yes
+      gpgcheck: no
+    when: package_check.rc != 0
+
+  - name : Install httpd24-httpd package
+    yum:
+      name: httpd24-httpd
+      state: latest

@@ -1,0 +1,13 @@
+---
+apache:
+  self_build: "true"
+  rpm_bin_path: /opt/rh/httpd24/root/usr/sbin/httpd
+
+application:
+  conf_file: /NPSAPPL/etc/init.d/rcapache2
+  apache_bin: /NPSAPPL/bin/apache2/bin/httpd
+#  user: amanps
+  stop_cmd: /NPSAPPL/etc/init.d/rcapache2 stop
+  start_cmd: /NPSAPPL/etc/init.d/rcapache2 start
+
+  # re_expr: "HTTPD='/NPSAPPL/bin/apache2/bin/httpd -f /NPSAPPL/bin/conf.d/httpd.conf'"
