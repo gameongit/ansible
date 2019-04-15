@@ -1,1 +1,1 @@
-This is for Ansible files
+This is for Ansible files and playbooks.
