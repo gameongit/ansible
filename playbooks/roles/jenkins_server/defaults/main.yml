@@ -1,0 +1,17 @@
+---
+jenkins_server_home: "/var/lib/jenkins"
+jenkins_server_port: "8080"
+# jenkins_server_https_port: "8080"
+jenkins_server_user: "jenkins"
+jenkins_server_group: "jenkins"
+jenkins_server_url: "http://localhost:{{ jenkins_server_port }}"
+# jenkins_server_url: "https://localhost:{{ jenkins_server_https_port }}"
+
+jenkins_server_plugin_list:
+  - greenballs
+jenkins_server_plugins_folder: "{{ jenkins_server_home }}/plugins"
+# jenkins_server_plugin_repo_url: "https://updates.jenkins-ci.org/download/plugins/"
+jenkins_server_plugin_repo_url: "https://updates.jenkins.io/update-center.json"
+
+jenkins_server_temp_path: "{{ jenkins_server_home }}/tmp"
+jenkins_server_java_options: "-Djava.awt.headless=true -Djenkins.install.runSetupWizard=false -Djava.io.tmpdir={{ jenkins_server_temp_path }}"

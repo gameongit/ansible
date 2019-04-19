@@ -1,0 +1,6 @@
+---
+- hosts: jenkins_servers
+  become: yes
+  roles:
+     - repo_jenkins
+     - jenkins_server

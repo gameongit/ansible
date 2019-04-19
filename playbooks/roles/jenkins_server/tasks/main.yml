@@ -1,0 +1,76 @@
+- name: Create jenkins group with special GID
+  group:
+      name: "{{ jenkins_server_group }}"
+      gid: 200015
+      state: present
+
+- name: Create jenkins user with special UID
+  user:
+    name: '{{ jenkins_server_user }}'
+    home: '{{ jenkins_server_home }}'
+    shell: /bin/bash
+    groups: "{{ jenkins_server_group }}"
+    uid: 200029
+    state: present
+
+- name: Install jenkins rpm package and dependenies
+  yum:
+    name:
+      - java-1.8.0-openjdk
+      - git
+      - jenkins
+    state: latest
+
+- name: Stop jenkins service before configuration
+  service:
+    name: jenkins
+    state: stopped
+
+- name: |
+    Creates tmp folder. By default Amadeus linux OS has /tmp with noexec option
+    Jenkins uses /tmp be default to run scripts. Change to new path
+  file:
+    path: "{{ jenkins_server_temp_path }}"
+    state: directory
+    owner: "{{ jenkins_server_user }}"
+    group: "{{ jenkins_server_group }}"
+    mode: 0775
+
+- name: |
+      Change Jenkins JAVA startup options:
+        - Disable starting wizard.
+        - Setup new tmp folder
+        - Setup https_port
+  lineinfile:
+    dest: /etc/sysconfig/jenkins
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - {regexp: '^JENKINS_JAVA_OPTIONS=', line: 'JENKINS_JAVA_OPTIONS="{{ jenkins_server_java_options }}"'}
+    - {regexp: '^JENKINS_PORT=',         line: 'JENKINS_PORT="{{ jenkins_server_port }}"'}
+#    - {regexp: '^JENKINS_HTTPS_PORT=',   line: 'JENKINS_HTTPS_PORT="{{ jenkins_server_https_port }}"'}
+    - {regexp: '^JENKINS_HOME=',         line: 'JENKINS_HOME="{{ jenkins_server_home }}"'}
+
+- name: |
+    Create folder for the plugins
+    Folder doesn't exist before first start of jenkins
+  file:
+    path: "{{ jenkins_server_plugins_folder }}"
+    state: directory
+    owner: "{{ jenkins_server_user }}"
+    group: "{{ jenkins_server_user }}"
+    mode: 0775
+
+#- name: Pre-download plugins
+#  jenkins_download_plugin:
+#    name: "{{ jenkins_server_plugin_list }}"
+#    update_url: "{{ jenkins_server_plugin_repo_url }}"
+#    dest: "{{ jenkins_server_plugins_folder }}"
+
+- name: Start jenkins service and enable on boot
+  service:
+    name: jenkins
+    state: started
+    enabled: yes
+
+- import_tasks: wait_jenkins.yml
