@@ -1,0 +1,12 @@
+- name: Wait for apache to Start up
+  uri:
+    url: "http://localhost:80"
+    status_code: 200
+    timeout: 5
+    validate_certs: no
+  register: apache_service_status
+  retries: 60
+  delay: 5
+  until: >
+    'status' in apache_service_status and
+    apache_service_status['status'] == 200

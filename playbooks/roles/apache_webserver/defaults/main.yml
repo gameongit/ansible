@@ -1,0 +1,7 @@
+---
+upload_location: "/var/www/html/upload"
+upload_alias_name: "/upload"
+document_root: "/var/www/html"
+apache_server_user: "apache"
+
+

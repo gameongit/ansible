@@ -1,0 +1,49 @@
+- name: Install httpd package
+  yum:
+    name: httpd
+    state: latest
+
+- name: Copy the WebPage
+  copy:
+    src: files/index.html
+    dest: /var/www/html/index.html
+
+- name: |
+      Change Apache upload directory options:
+        - Disable starting wizard.
+        - Setup new tmp folder
+        - Setup https_port
+  lineinfile:
+    dest: /etc/httpd/conf/httpd.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - {regexp: '^    # Alias ', line: '    Alias {{ upload_alias_name }} {{ upload_location }}'}
+
+- name: |
+     Create folder for the upload
+     Folder doesn't exist before first start of apache
+  file:
+    path: "{{ upload_location }}"
+    state: directory
+    owner: "{{ apache_server_user }}"
+    group: "{{ apache_server_user }}"
+    mode: 0775
+
+- name: Copy the files
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: 'files/README.txt', dest: '{{ upload_location }}/README.txt' }
+    - { src: 'files/testfile.txt', dest: '{{ upload_location }}/testfile.txt' }
+
+- name: Start service httpd, if not started
+  service:
+    name: httpd
+    state: restarted
+
+- name: Enable service httpd, and not touch the state
+  service:
+    name: httpd
+    enabled: yes
+
+- import_tasks: wait_apache_server.yml 
