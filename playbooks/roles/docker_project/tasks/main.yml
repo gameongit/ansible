@@ -1,0 +1,52 @@
+- name : Install docker if not installed
+  yum:
+   name: docker-ce
+   state: present
+
+- name: Check if the docker package is present
+  yum:
+    list: docker-ce*
+    state: installed
+  register: out
+- debug: var=out.results[-2]
+
+- name: Build Docker image from Dockerfile
+  docker_image:
+    name: "{{ docker_image_name }}"
+    path: roles/docker_project/docker
+    state: present
+  register: docker_image_out
+- debug: var=docker_image_out
+
+- name: Run docker container
+  docker_container:
+    name: "{{ docker_container_name }}"
+    image: "{{ docker_image_name }}"
+    interactive: true
+    detach: true
+    hostname: "{{ docker_container_hostname }}"
+    ports:
+     - "{{ host_port }}:{{ docker_port }}"
+    state: present
+    command: "bash"
+  register: docker_con_out
+- debug: var=docker_con_out
+
+- pause:
+    seconds: 5
+
+- name: Start docker container
+  shell: "docker start {{ docker_container_name }}"
+  register: docker_start
+- debug: var=docker_start 
+
+
+- name: Check container status in "docker ps -a"
+  shell: "docker ps -a"
+  register: docker_psa
+- debug: var=docker_psa.stdout_lines
+
+- name: Check container status in "docker ps"
+  shell: "docker ps"
+  register: docker_ps
+- debug: var=docker_ps.stdout_lines

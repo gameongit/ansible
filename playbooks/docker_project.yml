@@ -1,0 +1,6 @@
+---
+- name: This is for docker project
+  hosts: localhost
+  become: true
+  roles:
+    - docker_project

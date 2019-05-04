@@ -1,0 +1,7 @@
+---
+docker_image_name: web
+docker_image_version: latest
+docker_container_name: webserver_nginx
+docker_container_hostname: mydocker
+docker_port: 80
+host_port: 81
