@@ -1,0 +1,37 @@
+- name: Copy the script to remote server
+  copy:
+    src: files/vormteric_client_update.py
+    dest: /tmp/vormteric_client_update.py
+    owner: root
+    group: root
+    mode: 0500
+
+- name: Run the script on remote server
+  shell: "/usr/bin/python /tmp/vormteric_client_update.py"
+  ignore_errors: yes
+  register: script_output
+- debug: var=script_output.stdout_lines
+
+- name: Delete the vormetric script from the remote server
+  block: 
+    - name: Delete the file
+      file:
+        path: /tmp/vormteric_client_update.py
+        state: absent
+ 
+#    - name: "Reboot server"
+#      shell: "sleep 5 && reboot"
+#      async: 1
+#      poll: 0
+#      ignore_errors: true
+
+#    - name: Wait 900 seconds for server to check after reboot
+#      become: false
+#      wait_for_connection:
+#        connect_timeout: 20
+#        sleep: 5
+#        delay: 10
+#        timeout: 900
+
+    - pause: seconds=30
+  when: script_output.changed

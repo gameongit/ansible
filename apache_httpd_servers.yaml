@@ -1,0 +1,5 @@
+---
+- hosts: httpd_servers
+  become: yes
+  roles:
+    - apache_httpd

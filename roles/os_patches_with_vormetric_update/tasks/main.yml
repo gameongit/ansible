@@ -1,0 +1,61 @@
+- name: Run script to capture information on the server.
+  include_tasks: information_capture.yml
+  vars:
+    state: before
+
+- name: Check the vormetric package is installed
+  shell: "rpm -qa | grep -i vee-fs"
+  ignore_errors: yes
+  register: process_out
+- debug: var=process_out
+
+- name: Package availability check
+  include_tasks: "{{ ansible_distribution|lower }}.yml"
+  vars:
+    check: true
+
+- name: Update, Reboot the server if packages are there to update
+  block:
+
+   - name: Run the command to set the maintenace mode
+     become: false
+     shell: curl -s "http://****/EMDBI/mama/mastart?ec=*&sc={{ inventory_hostname }}&ed={{ emdb_duration }}&ae=1"
+     delegate_to: localhost
+     ignore_errors: true
+     register: emdb_out
+   - debug: var=emdb_out.stdout_lines
+    
+   - include_tasks: "{{ ansible_distribution|lower }}.yml"
+     vars:
+       check: false
+
+   - include_tasks: vormetric.yml
+     when: process_out.failed == false
+
+   - name: Run the script to check if the server required reboot
+     script: files/check_reboot.sh
+     register: check_reboot_output
+   - debug: var=check_reboot_output.stdout_lines
+
+   - name: "Reboot server"
+     shell: "sleep 5 && reboot"
+     async: 1
+     poll: 0
+     ignore_errors: true
+     when: "'RebootRequired' in check_reboot_output.stdout_lines"
+
+   - name: Wait 900 seconds for server to check after reboot
+     become: false
+     wait_for_connection:
+       connect_timeout: 20
+       sleep: 5
+       delay: 10
+       timeout: 900
+
+   - pause: seconds=30
+
+   - include_tasks: information_capture.yml
+     vars:
+       state: after
+
+#  when: installation_check.changed

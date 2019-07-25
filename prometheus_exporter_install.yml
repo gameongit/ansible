@@ -1,0 +1,5 @@
+---
+- hosts: all
+  become: yes
+  roles:
+    - prom_node_exporter

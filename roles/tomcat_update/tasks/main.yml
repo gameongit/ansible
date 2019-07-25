@@ -1,0 +1,94 @@
+- name: List the processes running with User tomcat
+  shell: "rm -rf /tmp/tomcat_processes_before && ps -ef | grep -i tomcat | grep -v grep | tee -a /tmp/tomcat_processes_before"
+  ignore_errors: true
+  register: processes_out
+- debug: var=processes_out.stdout_lines
+
+- name: List the name of existing tomcat verion
+  shell: "ls -ld {{ tomcat_home}}/tomcat | awk '{print $11}'"
+  register: version_output
+- debug: var=version_output.stdout_lines
+
+- name: Copy the Tomcat package
+  copy:
+    src: "files/{{ tomcat_version_dir }}"
+    dest: "{{ tomcat_home }}"
+
+
+- name: List the links in the Tomcat home folder and change the name of the folder in new directory.
+  shell: cd "{{ tomcat_home }}/{{ tomcat_version_dir }}" ; for link in $(ls -ltr "{{ tomcat_home }}"/tomcat/ | grep ^l | awk '{print $9}'); do mv "{{ tomcat_home}}/{{ tomcat_version_dir }}"/"$link" "{{ tomcat_home}}/{{ tomcat_version_dir }}"/"$link"_original;  done
+
+- name: Taking backup of the file from into new directory in conf folder
+  shell: "mv {{ tomcat_home}}/{{ tomcat_version_dir }}/conf/{{ item }} {{ tomcat_home}}/{{ tomcat_version_dir }}/conf/{{ item }}_original"
+  with_items:
+    - web.xml
+    - context.xml
+    - tomcat-users.xml
+    - server.xml
+
+- name: Copy the file from old dir to new tomcat directory
+  copy:
+    src: "{{ tomcat_home}}/tomcat/conf/{{ item }}"
+    dest: "{{ tomcat_home}}/{{ tomcat_version_dir }}/conf/{{ item }}"
+    remote_src: yes
+  with_items:
+    - web.xml
+    - context.xml
+    - tomcat-users.xml
+    - server.xml
+
+- name: Taking backup of the file from into new directory in bin folder
+  shell: "mv {{ tomcat_home}}/{{ tomcat_version_dir }}/bin/{{ item }} {{ tomcat_home}}/{{ tomcat_version_dir }}/bin/{{ item }}_original"
+  with_items:
+    - startup.sh
+    - catalina.sh
+
+- name: Copy the file from old dir to new tomcat directory
+  copy:
+    src: "{{ tomcat_home}}/tomcat/bin/{{ item }}"
+    dest: "{{ tomcat_home}}/{{ tomcat_version_dir }}/bin/{{ item }}"
+    remote_src: yes
+  with_items:
+    - startup.sh
+    - catalina.sh
+
+- name: Create the link for the files
+  shell:  ls -ltr "{{ tomcat_home }}"/tomcat/ | grep ^l | awk '{print $11"   "$9}' > /tmp/linkfile ; cd "{{ tomcat_home}}/{{ tomcat_version_dir }}" ; while IFS= read -r line; do T=$(echo "$line" | awk '{print $1}' ); V=$(echo "$line" | awk '{print $2}'); ln -s $T $V;  done  < /tmp/linkfile
+
+- name: Run the command to set the maintenace mode
+  become: false
+  shell: curl -s "http://emdb.muc.amadeus.net:8080/EMDBI/mama/mastart?ec=*&sc={{ inventory_hostname }}&ed={{ emdb_duration }}&ae=1"
+  delegate_to: localhost
+  ignore_errors: true
+  register: emdb_out
+- debug: var=emdb_out.stdout_lines
+
+- pause: seconds=10
+
+- name: Stop the service
+  shell: "{{ tomcat_service_cmd }}  stop"
+  register: Stop_out
+- debug: var=Stop_out.stdout_lines
+
+- name: Unlink the old tomcat version
+  shell: "unlink {{ tomcat_home }}/tomcat"
+ 
+- name: Create the new link with new tomcat directory version
+  shell: "cd {{ tomcat_home }}; ln -s {{ tomcat_home }}/{{ tomcat_version_dir }} tomcat "
+
+- name: Start the service
+  shell: "{{ tomcat_service_cmd }} start"
+  register: Start_out
+- debug: var=Start_out.stdout_lines
+
+- name: List the tomcat verion after update
+  shell: "ls -ld {{ tomcat_home}}/tomcat | awk '{print $11}'"
+  register: version_output1
+- debug: var=version_output1.stdout_lines
+
+- name: List the processes running with User tomcat
+  shell: "sleep 10 && rm -rf /tmp/tomcat_processes_after && ps -ef | grep -i tomcat | grep -v grep | tee -a /tmp/tomcat_processes_after"
+  ignore_errors: true
+  register: processes_out1
+- debug: var=processes_out1.stdout_lines
+

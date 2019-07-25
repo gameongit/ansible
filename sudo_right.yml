@@ -1,0 +1,8 @@
+---
+
+- name: Apply sudo for group srsadmin
+  hosts: all
+
+  roles:
+    - sudo_right
+  

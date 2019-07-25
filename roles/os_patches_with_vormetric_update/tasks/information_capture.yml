@@ -1,0 +1,65 @@
+- name: "Temp directory to store information"
+  file:
+     path: "{{ item }}"
+     state: directory
+     owner: root
+     group: root
+  with_items:
+     - /tmp/os_patch_{{ ansible_date_time.year }}
+     - /tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}
+
+- name: Show UNAME details
+  shell: "uname -a  | tee -a /tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/uname_{{ state }}_update"
+  register: UNAME_output
+- debug: var=UNAME_output.stdout_lines
+
+- name: list boot directory contents
+  shell: "ls -ltr /boot  | tee -a /tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/bootDirContents_{{ state }}_update"
+  register: BOOT_output
+- debug: var=BOOT_output.stdout_lines
+
+- name: Save IP details
+  shell: "ip a  | tee -a /tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/ipa_{{ state }}_update"
+  register: IP_output
+- debug: var=IP_output.stdout_lines
+
+
+- name: Run script to capture information on the server.
+  shell: "rpm -qa | sort | tee -a /tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/rpmlist_{{ state }}_update"
+  register: RPM_output
+- debug: var=RPM_output.stdout_lines
+
+- name: Take a copy of sysctl
+  copy:
+    src: /etc/sysctl.conf
+    dest: "/tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/sysctl.conf_{{ state }}_update"
+    remote_src: yes
+
+- name: Take a copy of grub file for sles
+  copy:
+    src: /boot/grub/menu.lst
+    dest: "/tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/grub_{{ state }}_update"
+    remote_src: yes
+  when: "ansible_distribution|lower == 'sles'"
+
+- name: Take a copy of grub file for redhat6
+  copy:
+    src: /boot/grub/grub.conf
+    dest: "/tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/grub_{{ state }}_update"
+    remote_src: yes
+  when: "ansible_distribution|lower == 'redhat' and ansible_distribution_major_version == '6'"
+
+- name: Take a copy of grub file for redhat7
+  copy:
+    src: /boot/grub2/grub.cfg
+    dest: "/tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/grub_{{ state }}_update"
+    remote_src: yes
+  when: "ansible_distribution|lower == 'redhat' and ansible_distribution_major_version == '7'"
+
+- name: Take mount point lists
+  shell: "df -hT | tee -a /tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/df_{{ state }}_update" 
+  register: DF_output
+- debug: var=DF_output.stdout_lines
+
+- name: Save IP tables
+  shell: "iptables-save ; iptables-save | tee -a /tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/iptables_{{ state }}_update"

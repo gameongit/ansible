@@ -1,0 +1,12 @@
+- name: Wait for Jenkins to start up
+  uri:
+    url: "{{ jenkins_server_url }}/whoAmI/"
+    status_code: 200
+    timeout: 5
+    validate_certs: no
+  register: jenkins_service_status
+  retries: 60
+  delay: 5
+  until: >
+    'status' in jenkins_service_status and
+    jenkins_service_status['status'] == 200

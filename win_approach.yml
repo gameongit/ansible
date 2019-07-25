@@ -1,0 +1,308 @@
+- hosts: all
+  #serial: '{{ serial }}'
+  #max_fail_percentage: '{{ max_fail_percentage }}'
+
+  vars:
+    emdb_duration: 60
+    venus_host: venusprd
+    venus_port: 3306
+    venus_schema: prdevents
+    scheck: true
+    scheck_delay: 90
+    check_emdb: true
+    check_reboot: true
+    check_oms: true
+    check_peers: true
+    wina_url: '{{ wina_url }}'
+    winaproach_recordCR: '{{ winaproach_recordCR }}'
+    winaproach_title: '{{ winaproach_title }}'
+    winaproach_duration: '{{ winaproach_duration }}'
+    systemCategory: '{{ systemCategory }}'
+    system: '{{ system }}'
+
+  tasks:
+
+    - name: Retrieve vault credentials
+      include_vars: vault/secrets.yml
+      no_log: False
+
+    - name: Winaproach create TR
+      aproach:
+        json_args:
+          duration: "{{ winaproach_duration }}"
+          cr: "{{ winaproach_recordCR }}"
+          status: AG
+          wina_url: '{{ wina_url }}'
+          winamethod: create
+          winatemplate: tr_create_4.j2
+          group: "OGE01SUP"
+          name: "{{ winaproach_user }}"
+          phone: "00496172912682"
+          foureyegroup: "OGE01SUP"
+          foureyeuser: "{{ winaproach_user }}"
+          implementerGroup: "OGE01SUP"
+          implementerUser: "{{ winaproach_user }}"
+          title: "{{ winaproach_title }}"
+          ci_list: "{{ ansible_play_hosts }}"
+          ccat1: "IS"
+          ccat2: "SE"
+          ccat3: "RPAT"
+          systemCategory: "{{ systemCategory }}"
+          system: "{{ system }}"
+          implementation:
+            - "- Log on AWX"
+            - "https://awx.in.int-a.prod1.paas.amadeus.net/#/login"
+            - ""
+            - "- Select job template"
+            - "https://awx.in.int-a.prod1.paas.amadeus.net/#/templates/job_template/"
+            - ""
+            - "- Launch AWX template"
+            - "{{ tower_job_template_name }}"
+            - ""
+            - "- Define limit (optional, only if single servers from the inventory should be handled)"
+            - ""
+            - "- AWX Job id"
+            - "{{ tower_job_id }}"
+          validation:
+            - "Included in Ansible playbook"
+          fallback:
+            - "Trigger sysadmin to"
+            - "- Access remote console of physical or virtual server"
+            - "- Restart system or reset via remote console"
+            - "- Pick and boot 2nd line (previous kernel version) in grub menu"
+          automationLevel: "SB"
+        user: "{{ winaproach_user }}"
+        passwd: "{{ winaproach_pwd }}"
+      register: id
+      when: inventory_hostname == ansible_play_hosts[0]
+      delegate_to: localhost
+
+    - name: Print TR number
+      debug:
+        msg: "{{ id.msg.ticket }}"
+      when: inventory_hostname == ansible_play_hosts[0]
+
+    - name: Export id to a 'host-fact' type variable
+      set_fact:
+        id: "{{ id.msg.ticket }}"
+      when: inventory_hostname == ansible_play_hosts[0]
+
+    - name: Print start time
+      debug:
+        msg: "{{ lookup('pipe','date +%H:%M') }}"
+      when: inventory_hostname == ansible_play_hosts[0]
+
+    - name: Export start_time to a 'host-fact' type variable
+      set_fact:
+        start_time: "{{ lookup('pipe','date +%H:%M') }}"
+      when: inventory_hostname == ansible_play_hosts[0]
+
+    - name: Winaproach schedule TR
+      aproach:
+        json_args:
+          duration: "{{ winaproach_duration }}"
+          id: "{{ hostvars[ansible_play_hosts[0]]['id'] }}"
+          cr: "{{ winaproach_recordCR }}"
+          status: AM
+          wina_url: '{{ wina_url }}'
+          winamethod: update
+          winatemplate: tr_schedule_4.j2
+          overview:
+            - "*CCB preapproved procedure"
+         #  - "https://rndwww.nce.amadeus.net/confluence/display/CMT/Change+Procedure%3ASRC-SCA%3AReboot+Patching%3ASTB"
+          approvalSection: "OSRCCCB"
+          approvalBoard: "SRC"
+          approvalGroup: "OSRCCCB"
+          approvalRequestor: "dsamuvel"
+          approvalStatus: "P"
+          group: "OGE01SUP"
+          name: "{{ winaproach_user }}"
+          foureyegroup: "OGE01SUP"
+          foureyeuser: "{{ winaproach_user }}"
+          phone: "00496172912682"
+        user: "{{ winaproach_user }}"
+        passwd: "{{ winaproach_pwd }}"
+      when: inventory_hostname == ansible_play_hosts[0]
+      delegate_to: localhost
+
+  #  - include: ../tasks/check_emdb.yml
+  #    when: check_emdb | bool
+
+  #  - include: ../tasks/check_reboot.yml
+  #    when: check_reboot | bool
+
+  #  - include: ../tasks/scheck.yml
+  #   when: scheck | bool
+
+  # - include: ../tasks/check_oms.yml
+  #   when: check_oms | bool
+
+  #  - include: ../tasks/check_peers.yml
+  #    when: check_peers | bool
+
+    - name: EMDB Maintenance Start
+      command: curl -v -k -u {{ emdb_user }}:"{{ emdb_pwd }}" https://emdb.muc.amadeus.net:7071/rest/mastart?ec=%25&sc={{ inventory_hostname }}%25&inst=%25&ed="{{ emdb_duration }}"
+      delegate_to: localhost
+
+    - name: Winaproach start implementation
+      aproach:
+        json_args:
+          id: "{{ hostvars[ansible_play_hosts[0]]['id'] }}"
+          cr: "{{ winaproach_recordCR }}"
+          status: AO
+          recordtype: "TR"
+          wina_url: '{{ wina_url }}'
+          winamethod: update
+          winatemplate: tr_start_impl.j2
+          actStartDate: "{{ lookup('pipe','date +%d%b%y') }}"
+          actStartTime: "{{ hostvars[ansible_play_hosts[0]]['start_time'] }}"
+          group: "OGE01SUP"
+          name: "{{ winaproach_user }}"
+          foureyegroup: "OGE01SUP"
+          foureyeuser: "{{ winaproach_user }}"
+          phone: "00496172912682"
+        user: "{{ winaproach_user }}"
+        passwd: "{{ winaproach_pwd }}"
+      when: inventory_hostname == ansible_play_hosts[0]
+      delegate_to: localhost
+
+  #  - name: Restart Machine
+  #    shell: sleep 5 && sudo /sbin/reboot
+  #    async: 10
+  #    poll: 0
+  #    when: ansible_uptime_seconds > 86400
+  #    ignore_errors: true
+
+  #  - name: Waiting for Server to come back
+  #    local_action:
+  #      wait_for
+  #      host={{ inventory_hostname }}
+  #      port=22
+  #      state=started
+  #      delay=30
+  #      timeout=900
+  #    when: ansible_uptime_seconds > 86400
+  #    ignore_errors: true
+
+  # - pause: seconds=10
+
+    - name: Check server uptime
+      shell: "uptime | awk '{print $3,$4}'"
+      register: uptime
+
+    - name: Print uptime
+      debug:
+        msg: "{{ uptime.stdout }}"
+
+    - name: Winaproach update TR
+      aproach:
+        json_args:
+          id: "{{ hostvars[ansible_play_hosts[0]]['id'] }}"
+          cr: "{{ winaproach_recordCR }}"
+          recordtype: "TR"
+          overview:
+            - "*Server: {{ inventory_hostname }}"
+            - "#Uptime: {{ uptime.stdout }}"
+          wina_url: '{{ wina_url }}'
+          winamethod: update
+          winatemplate: any_update.j2
+          group: "OGE01SUP"
+          name: "{{ winaproach_user }}"
+          foureyegroup: "OGE01SUP"
+          foureyeuser: "{{ winaproach_user }}"
+          phone: "00496172912682"
+        user: "{{ winaproach_user }}"
+        passwd: "{{ winaproach_pwd }}"
+      delegate_to: localhost
+
+    - name: Pause for "{{ scheck_delay }}" seconds for Scheck to receive events
+      pause: seconds="{{ scheck_delay }}"
+      when: ansible_uptime_seconds > 86400
+      ignore_errors: true
+
+    - include_role:
+        name: winaproach
+        tasks_from: scheck.yml
+      when: scheck | bool
+
+    - name: EMDB Maintenance Stop
+      command: curl -v -k -u {{ emdb_user }}:"{{ emdb_pwd }}" https://emdb.muc.amadeus.net:7071/rest/mastop?ec=%25&sc={{ inventory_hostname }}%25&inst=%25
+      delegate_to: localhost
+
+    - name: Print end time
+      debug:
+        msg: "{{ lookup('pipe','date +%H:%M') }}"
+      when: inventory_hostname == ansible_play_hosts[-1]
+
+    - name: Export end_time to a 'host-fact' type variable
+      set_fact:
+        end_time: "{{ lookup('pipe','date +%H:%M') }}"
+      when: inventory_hostname == ansible_play_hosts[-1]
+
+    - name: Winaproach set TR to implemented
+      aproach:
+        json_args:
+          duration: "{{ winaproach_duration }}"
+          id: "{{ hostvars[ansible_play_hosts[0]]['id'] }}"
+          cr: "{{ winaproach_recordCR }}"
+          status: SL
+          recordtype: "TR"
+          wina_url: '{{ wina_url }}'
+          winamethod: update
+          winatemplate: tr_implemented.j2
+          actStartDate: "{{ lookup('pipe','date +%d%b%y') }}"
+          actEndDate: "{{ lookup('pipe','date +%d%b%y') }}"
+          actStartTime: "{{ hostvars[ansible_play_hosts[0]]['start_time'] }}"
+          actEndTime: "{{ hostvars[ansible_play_hosts[-1]]['end_time'] }}"
+          group: "OGE01SUP"
+          name: "{{ winaproach_user }}"
+          foureyegroup: "OGE01SUP"
+          foureyeuser: "{{ winaproach_user }}"
+          phone: "00496172912682"
+        user: "{{ winaproach_user }}"
+        passwd: "{{ winaproach_pwd }}"
+      when: inventory_hostname == ansible_play_hosts[-1]
+      delegate_to: localhost
+
+
+    - name: Winaproach set TR to validated
+      aproach:
+        json_args:
+          duration: "{{ winaproach_duration }}"
+          id: "{{ hostvars[ansible_play_hosts[0]]['id'] }}"
+          cr: "{{ winaproach_recordCR }}"
+          status: VA
+          recordtype: "TR"
+          wina_url: '{{ wina_url }}'
+          winamethod: update
+          winatemplate: tr_validated.j2
+          valtext:
+            - "works as expected"
+        user: "{{ winaproach_user }}"
+        passwd: "{{ winaproach_pwd }}"
+      when: inventory_hostname == ansible_play_hosts[0]
+      delegate_to: localhost
+
+
+    - name: Winaproach set TR to verified and close
+      aproach:
+        json_args:
+          duration: "{{ winaproach_duration }}"
+          id: "{{ hostvars[ansible_play_hosts[0]]['id'] }}"
+          cr: "{{ winaproach_recordCR }}"
+          status: CS
+#          date: "{{ WinASOAP.get_wina_date() }}"
+#          time: "{{ WinASOAP.get_wina_time() }}"
+          recordtype: "TR"
+          wina_url: '{{ wina_url }}'
+          winamethod: update
+          winatemplate: tr_verified.j2
+          overview: [ '# Done.' ]
+#          closedDate: "{{ lookup('pipe','date +%d%b%y') }}"
+#          closedTime: "{{ hostvars[ansible_play_hosts[-1]]['end_time'] }}"
+#          phase6EnteredDate: "{{ lookup('pipe','date +%d%b%y') }}"
+#          phase6EnteredTime: "{{ hostvars[ansible_play_hosts[-1]]['end_time'] }}"
+        user: "{{ winaproach_user }}"
+        passwd: "{{ winaproach_pwd }}"
+      when: inventory_hostname == ansible_play_hosts[0]
+      delegate_to: localhost

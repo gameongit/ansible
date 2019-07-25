@@ -1,0 +1,69 @@
+#
+# Playbook doen't work. Has to be tested
+#
+
+
+- name: switch httpd configuration to use rpm-based binaries
+  hosts: all
+  become: yes
+
+  vars:
+    apache:
+      rpm_bin_path: /opt/rh/httpd24/root/usr/sbin/httpd
+
+    ########################################
+    # please set up variables before start #
+    ########################################
+
+    # application:
+    #   conf_file: /NPSAPPL/etc/init.d/rcapache2
+    #   apache_bin: /NPSAPPL/bin/apache2/bin/httpd
+    #   user: amanps
+    #   stop_cmd: /NPSAPPL/etc/init.d/rcapache2 stop
+    #   start_cmd: /NPSAPPL/etc/init.d/rcapache2 start
+
+  tasks:
+  - name: stop application
+    shell: "{{ application.stop_cmd }}"
+    register: stop_out
+
+  - debug: var=stop_out.stdout_lines
+
+  - name: create config copy
+    copy:
+      src: "{{ application.conf_file }}"
+      dest: "{{ application.conf_file }}.backup"
+      remote_src: true
+
+  - name: Edit config to substitute binary
+    replace:
+      path: "{{ application.conf_file }}"
+      regexp: "{{ application.apache_bin }}"
+      replace: "{{ apache.rpm_bin_path }}"
+
+  - name: start application
+    shell: "{{ application.start_cmd }}"
+    ignore_errors: yes
+    register: start_out
+
+  - debug: var=start_out.stdout_lines
+
+  - name: check running apache in process list
+    shell: "ps -fU {{ application.user }} | grep {{ apache.rpm_bin_path }} | grep -v grep"
+    ignore_errors: yes
+    register: ps_httpd
+
+  - debug: var=ps_httpd.stdout_lines
+
+  - name: rollback
+    block:
+      - copy:
+          src: "{{ application.conf_file }}.backup"
+          dest: "{{ application.conf_file }}"
+          remote_src: true
+      - shell: "{{ application.start_cmd }}"
+        register: start_again_out
+      - debug: var=start_again_out.stdout_lines
+      - fail:
+
+    when: start_out.rc != 0 or ps_httpd.rc != 0

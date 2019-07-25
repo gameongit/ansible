@@ -1,0 +1,27 @@
+- name: install OpenSUSE apache 2.4 repo
+  include_role:
+       name: repo_opensuse_apache24
+  when: "ansible_distribution|lower == 'sles'"
+
+- name: install RHEL scl
+  include_role:
+       name: repo_rhel_scl
+  when: "ansible_distribution|lower == 'redhat'"
+
+- name: Package availability check
+  include_tasks: "{{ ansible_distribution|lower }}.yml"
+  vars:
+    check: true
+
+- name: Stop , Install/Upgrade and start apache application
+  block:
+#   - become_user: "{{ apache_user }}"
+#     command: "{{ apache_service_cmd }} stop"
+
+   - include_tasks: "{{ ansible_distribution|lower }}.yml"
+     vars:
+       check: false
+
+#   - become_user: "{{ apache_user }}"
+#     command: "{{ apache_service_cmd }} start"
+  when: installation_check.changed

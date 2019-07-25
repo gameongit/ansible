@@ -1,0 +1,6 @@
+jenkins_slave_jenkins_username: jenkins
+jenkins_slave_jenkins_home: /home/jenkins
+jenkins_slave_executors: 1
+
+jenkins_master_login: "{{ ansible_user }}"
+jenkins_master_password: "{{ ansible_password }}"

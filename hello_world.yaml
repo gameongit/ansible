@@ -1,0 +1,12 @@
+---
+
+- name: To have a handshake with the server
+  hosts: all
+  become: yes
+
+  tasks:
+  - name : Hello to other Server
+    shell: echo "Hello Server, I'm Ansible Tower here."
+    register: hello_out
+
+  - debug: var=hello_out.stdout_lines

@@ -1,0 +1,3 @@
+# tomcat_home variable is coming from inventory
+tomcat_version_dir: apache-tomcat-9.0.19
+emdb_duration: 60

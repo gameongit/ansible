@@ -1,0 +1,7 @@
+- name: "Check availability of Packages"
+  zypper:
+    name: *
+    state: latest
+  check_mode: "{{ check }}"
+  register: installation_check
+

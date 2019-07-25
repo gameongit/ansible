@@ -1,0 +1,8 @@
+- name: "Check availability of packages"
+  yum:
+    name: "*"
+    state: latest
+  check_mode: "{{ check }}"
+  register: installation_check
+
+

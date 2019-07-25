@@ -1,0 +1,13 @@
+- name: Install rpm key for io stable repository
+  rpm_key:
+    key: "{{ rpm_key_url }}"
+    state: present
+
+- name: Install jenkins rpm repository
+  yum_repository:
+    name: jenkins
+    description: Jenkins stable
+    baseurl: "{{ rpm_repo_url }}"
+    file: jenkins
+    enabled: yes
+    gpgcheck: yes

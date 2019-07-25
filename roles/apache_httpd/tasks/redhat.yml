@@ -1,0 +1,11 @@
+- name: Set the package
+  set_fact:
+    package: "{{ 'httpd24-httpd' if (ansible_distribution_major_version == '6') else 'httpd' }}"
+
+- name: "Check availability of {{ package }}"
+  yum:
+    name: "{{ package }}"
+    state: latest
+  check_mode: "{{ check }}"
+  register: installation_check
+

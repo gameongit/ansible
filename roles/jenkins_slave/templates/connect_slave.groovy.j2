@@ -1,0 +1,37 @@
+import hudson.model.*
+import jenkins.model.*
+import hudson.slaves.*
+import hudson.plugins.sshslaves.verifiers.*
+
+SshHostKeyVerificationStrategy hostKeyVerificationStrategy = new NonVerifyingKeyVerificationStrategy()
+//= new KnownHostsFileKeyVerificationStrategy() // Known hosts file Verification Strategy
+//= new ManuallyProvidedKeyVerificationStrategy("<your-key-here>") // Manually provided key Verification Strategy
+//= new ManuallyTrustedKeyVerificationStrategy(false /*requires initial manual trust*/) // Manually trusted key Verification Strategy
+//= new NonVerifyingKeyVerificationStrategy() // Non verifying Verification Strategy
+
+ComputerLauncher launcher = new hudson.plugins.sshslaves.SSHLauncher(
+        "{{ jenkins_slave_hostname }}", // Host
+        22, // port
+        "{{ jenkins_slave_credentials_id }}", // Credentials ID
+        (String)null, // JVM Options
+        (String)null, // JavaPath
+        (String)null, // Prefix Start Slave Command
+        (String)null, // Suffix Start Slave Command
+        (Integer)null, // Connection Timeout in Seconds
+        (Integer)null, // Maximum Number of Retries
+        (Integer)null, // The number of seconds to wait between retries
+        hostKeyVerificationStrategy // Host Key Verification Strategy
+)
+
+Slave agent = new DumbSlave(
+        "{{ jenkins_slave_name }}",
+        "{{ jenkins_slave_jenkins_home }}",
+        launcher)
+
+agent.nodeDescription = "{{ jenkins_slave_description }}"
+agent.numExecutors = {{ jenkins_slave_executors }}
+agent.labelString = "{{ jenkins_slave_label }}"
+agent.mode = Node.Mode.EXCLUSIVE
+agent.retentionStrategy = new RetentionStrategy.Always()
+
+Jenkins.instance.addNode(agent)

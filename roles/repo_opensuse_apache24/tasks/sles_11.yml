@@ -1,0 +1,8 @@
+- name: Install zypper repository for the Apache2.4 Suse packages
+  zypper_repository:
+    name: opensuse-sles_apache2.4
+    description: Opensuse Apache2.4 pacakge collection for SuSE
+    repo: "{{ repo_opensuse_apache24_repo_url }}"
+    enabled: yes
+    autorefresh: no
+    disable_gpg_check: yes

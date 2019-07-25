@@ -1,0 +1,66 @@
+- name: "Take a copy of grub file"
+  copy:
+    src: /boot/grub/grub.conf
+    dest: "/tmp/os_patch_revoke_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/grub_bkp"
+    remote_src: yes
+
+- name: "Take a copy of grub file from backup"
+  copy:
+    src: "/tmp/os_patch_{{ ansible_date_time.year }}/{{ ansible_date_time.date }}/grub_before_update"
+    dest: /boot/grub/grub.conf
+    remote_src: yes
+
+- name: "Show UNAME details"
+  shell: "uname -a"
+  register: UNAME_output1
+- debug: var=UNAME_output1.stdout_lines
+
+- name: "Get the recent ID from the history command"
+  shell: "yum -y history undo $(yum history | grep -A 2 'Login user' | tail -1| awk '{print $1}')"
+  register: revoke_output
+- debug: var=revoke_output.stdout_lines
+
+- pause: seconds=10
+
+- name: "Reboot server"
+  shell: "sleep 5 && reboot"
+  async: 1
+  poll: 0
+  ignore_errors: true
+
+- name: "Wait 900 seconds for server to check after reboot"
+  become: false
+  wait_for_connection:
+    connect_timeout: 20
+    sleep: 5
+    delay: 10
+    timeout: 900
+
+- name: "Show UNAME details"
+  shell: "uname -a"
+  register: UNAME_output2
+- debug: var=UNAME_output2.stdout_lines
+
+- name: "Get the recent ID from the history command"
+  shell: "yum -y history undo $(yum history | grep -A 3 'Login user' | tail -1| awk '{print $1}')"
+  register: revoke_output1
+- debug: var=revoke_output1.stdout_lines
+
+- name: "Reboot server"
+  shell: "sleep 5 && reboot"
+  async: 1
+  poll: 0
+  ignore_errors: true
+
+- name: "Wait 900 seconds for server to check after reboot"
+  become: false
+  wait_for_connection:
+    connect_timeout: 20
+    sleep: 5
+    delay: 10
+    timeout: 900
+
+- name: "Show UNAME details"
+  shell: "uname -a"
+  register: UNAME_output3
+- debug: var=UNAME_output3.stdout_lines

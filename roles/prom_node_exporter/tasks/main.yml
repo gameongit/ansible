@@ -1,0 +1,44 @@
+- name: Add group in the server
+  group:
+    name: "{{ group }}"
+    state: present
+
+- name: Add user in the server
+  user:
+    name: "{{ user }}"
+    group: "{{ group }}"
+    state: present
+
+
+- name: Set the ownership and permission
+  file:
+    path: "/home/{{ user }}"
+    state: directory
+    mode: 0700
+    owner: "{{ user }}"
+    group: "{{ group }}"
+
+- name: Install prometheus exporter
+  zypper:
+    name: "{{ url_sles11 }}"
+    state: present
+  when: "ansible_distribution|lower == 'sles'"
+
+- name: Install prometheus exporter
+  yum:
+    name: "{{ url_redhat6 }}"
+    state: present
+  when: "ansible_distribution|lower == 'redhat'"
+
+- name: Node Exporter service started
+  service:
+    name: "{{ service }}"
+    state: started
+
+- name: Node Exporter service enabled
+  service:
+    name: "{{ service }}"
+    enabled: yes
+
+
+

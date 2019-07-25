@@ -1,0 +1,7 @@
+---
+- hosts: jenkins_slaves
+  become: yes
+  roles:
+     - repo_rhel_scl
+     - repo_python_pip
+     - jenkins_slave

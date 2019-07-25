@@ -1,0 +1,8 @@
+- name: Run script to capture information on the server.
+  include_tasks: information_capture.yml
+  vars:
+    state: before
+
+- name: Package availability check
+  include_tasks: "{{ ansible_distribution|lower }}.yml"
+

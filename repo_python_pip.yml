@@ -1,0 +1,5 @@
+---
+- hosts: python_servers
+  become: yes
+  roles:
+     - repo_python_pip

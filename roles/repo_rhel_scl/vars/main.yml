@@ -1,0 +1,4 @@
+---
+
+rhel_scl_6_repo: "http://****/mirror/latest/rhel-server-rhscl-6-rpms/"
+rhel_scl_7_repo: "http://****/mirror/latest/rhel-server-rhscl-7-rpms/"

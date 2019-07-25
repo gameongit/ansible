@@ -1,0 +1,8 @@
+- name: Install yum repository for the RedHat Sowtware collection
+  yum_repository:
+    name: scl-el
+    description: Software Collections for RedHat Enterprise Linux - x86_64
+    baseurl: "{{ rhel_scl_6_repo }}"
+    file: scl
+    enabled: yes
+    gpgcheck: no

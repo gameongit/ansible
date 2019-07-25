@@ -1,0 +1,6 @@
+---
+user: prometheus 
+group: prometheus
+url_sles11: "http://node_exporter-0.16.0-amafop.sles11.x86_64.rpm"
+url_redhat6: "http://node_exporter-0.16.1-amafop.el6.x86_64.rpm"
+service: node_exporter

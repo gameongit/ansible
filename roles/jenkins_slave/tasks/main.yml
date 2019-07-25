@@ -1,0 +1,36 @@
+- name: Install java and git packages only RHEL6/7
+  yum:
+    name:
+      - java-1.8.0-openjdk-headless
+      - git
+    state: latest
+
+#
+# can't use /etc/pip.conf and try to use pypi.python.org
+#
+
+# - name: Install python-jenkins
+#   pip:
+#     name: python-jenkins
+#     executable: /opt/rh/python27/root/usr/bin/pip
+#     state: latest
+
+- name: Ensure jenkins user
+  user:
+    name: '{{ jenkins_slave_jenkins_username }}'
+    home: '{{ jenkins_slave_jenkins_home }}'
+    shell: /bin/bash
+    state: present
+
+- name: Add master public key to authorized keys
+  authorized_key:
+    user: '{{ jenkins_slave_jenkins_username }}'
+    key: '{{ jenkins_slave_jenkins_authorized_key }}'
+
+# - name: Create jenkins node and connect it by ssh (using SSH Slaves plugin)
+#   jenkins_script:
+#     script: "{{ lookup('template', './templates/connect_slave.groovy.j2') }}"
+#     user: "{{ jenkins_master_login}}"
+#     password: "{{ jenkins_master_password}}"
+#     url: "{{ jenkins_master_hostname}}"
+#     validate_certs: no

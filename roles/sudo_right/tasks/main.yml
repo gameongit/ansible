@@ -1,0 +1,8 @@
+---
+- name: To add group in sudoers
+  remote_user: "{{ user }}"
+  become: yes
+  lineinfile:
+    dest: /etc/sudoers
+    line: "%{{ group }} ALL = (ALL) NOPASSWD: ALL"
+    state: present

@@ -1,0 +1,4 @@
+
+pip_repo_url: https://****/api/pypi/pypimdw/simple
+pip_trust_host: repository
+pip_conf_path: /etc/pip.conf

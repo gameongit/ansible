@@ -1,0 +1,6 @@
+---
+- name: To update the tomcat version
+  hosts: tomcat_servers
+  become_user: "{{ tomcat_user }}"
+  roles:
+    - tomcat_update
